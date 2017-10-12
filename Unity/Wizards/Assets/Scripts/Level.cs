@@ -20,7 +20,7 @@ public class Level : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
     {
-        StartCoroutine(CreateEnemies(1000));
+        StartCoroutine(CreateEnemies(10));
 	}
 	
 	// Update is called once per frame
@@ -30,13 +30,19 @@ public class Level : MonoBehaviour {
         {
             RaycastHit hit;
             var ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out hit))
+            LayerMask floorLayer = 1 << LayerMask.NameToLayer("Floor");
+            if (Physics.Raycast(ray, out hit, playerCamera.farClipPlane, floorLayer))
             {
                 Debug.Log(hit.point);
                 var spellPrefab = Resources.Load<GameObject>("Spells/Spell1");
-                var origin = new Vector3(0, 2, 0);
+                var origin = Camera.main.transform.position + Vector3.down;//new Vector3(64, 4, 0);
                 var spell = Instantiate(spellPrefab, origin, Quaternion.identity);
                 spell.transform.LookAt(hit.point);
+                spell.GetComponentInChildren<RFX4_TransformMotion>().CollisionEnter += (object sender, RFX4_TransformMotion.RFX4_CollisionInfo e) =>  {
+                    var enemyHealth = e.Hit.transform.GetComponent<EnemyHealth>();
+                    if (enemyHealth != null)
+                        enemyHealth.TakeHit(UnityEngine.Random.Range(150, 250));
+                };
             }
         }
 	}
@@ -46,9 +52,9 @@ public class Level : MonoBehaviour {
         for (int i = 0; i < quantity; i++)
         {
             CreateEnemy(enemiesPrefab[0]);
-            yield return new WaitForSeconds(1f);
-            CreateEnemy(enemiesPrefab[1]);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(Random.Range(1f, 5f));
+//            CreateEnemy(enemiesPrefab[1]);
+//            yield return new WaitForSeconds(1f);
         }
     }
 
